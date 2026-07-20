@@ -100,7 +100,6 @@ export function NewTransactionDialog() {
     mutationFn: async () => {
       const valor = Number(form.valor.replace(",", "."));
       if (!Number.isFinite(valor) || valor <= 0) throw new Error("Valor inválido.");
-      if (!form.descricao.trim()) throw new Error("Descrição obrigatória.");
       if (!form.data) throw new Error("Data obrigatória.");
       const cat = catsQ.data?.categories.find((c) => c.id === form.category_id);
       const sub = catsQ.data?.subcategories.find((s) => s.id === form.subcategory_id);
@@ -153,6 +152,10 @@ export function NewTransactionDialog() {
         toast.error("Por favor, preencha a data.");
         return;
       }
+      if (!form.tipo) {
+        toast.error("Por favor, selecione o tipo.");
+        return;
+      }
       setStep(2);
     } else if (step === 2) {
       const v = Number(form.valor.replace(",", "."));
@@ -162,15 +165,31 @@ export function NewTransactionDialog() {
       }
       setStep(3);
     } else if (step === 3) {
-      if (!form.descricao.trim()) {
-        toast.error("Por favor, preencha a descrição.");
+      if (!form.category_id) {
+        toast.error("Por favor, selecione a categoria.");
         return;
       }
       setStep(4);
     } else if (step === 4) {
+      if (!form.subcategory_id) {
+        toast.error("Por favor, selecione a subcategoria.");
+        return;
+      }
       setStep(5);
     } else if (step === 5) {
+      if (!form.account_id) {
+        toast.error("Por favor, selecione a conta.");
+        return;
+      }
       setStep(6);
+    } else if (step === 6) {
+      if (!form.forma_pagto) {
+        toast.error("Por favor, selecione a forma de pagamento.");
+        return;
+      }
+      setStep(7);
+    } else if (step === 7) {
+      setStep(8);
     }
   };
 
@@ -192,7 +211,7 @@ export function NewTransactionDialog() {
           <DialogTitle className="flex justify-between items-center pr-6">
             <span>Novo lançamento</span>
             <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-              Passo {step} de 6
+              Passo {step} de 8
             </span>
           </DialogTitle>
         </DialogHeader>
@@ -201,18 +220,37 @@ export function NewTransactionDialog() {
         <div className="w-full bg-muted h-1 rounded-full overflow-hidden mb-4">
           <div
             className="bg-primary h-full transition-all duration-300"
-            style={{ width: `${(step / 6) * 100}%` }}
+            style={{ width: `${(step / 8) * 100}%` }}
           />
         </div>
 
         <div className="py-2 space-y-4">
-          {/* Passo 1: Data */}
+          {/* Passo 1: Data e Tipo */}
           {step === 1 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-1 duration-200">
-              <div className="text-sm font-medium text-muted-foreground">Qual a data do lançamento?</div>
-              <Field label="Data *">
-                <Input type="date" value={form.data} onChange={(e) => set("data", e.target.value)} className="text-sm" />
-              </Field>
+              <div className="text-sm font-medium text-muted-foreground">Qual o tipo e a data do lançamento?</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Tipo *">
+                  <Select
+                    value={form.tipo}
+                    onValueChange={(v) => {
+                      set("tipo", v as "Receita" | "Despesa");
+                      set("tipo_efetivo", v as TipoEfetivo);
+                    }}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Receita">Receita</SelectItem>
+                      <SelectItem value="Despesa">Despesa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Data *">
+                  <Input type="date" value={form.data} onChange={(e) => set("data", e.target.value)} className="text-sm" />
+                </Field>
+              </div>
             </div>
           )}
 
@@ -233,91 +271,11 @@ export function NewTransactionDialog() {
             </div>
           )}
 
-          {/* Passo 3: Descrição e Tipo */}
+          {/* Passo 3: Categoria */}
           {step === 3 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-1 duration-200">
-              <div className="text-sm font-medium text-muted-foreground">Dê uma descrição e defina o tipo:</div>
-              <Field label="Descrição *">
-                <Input
-                  value={form.descricao}
-                  onChange={(e) => set("descricao", e.target.value)}
-                  placeholder="Ex: Mercado, Salário..."
-                  autoFocus
-                  className="text-sm"
-                />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Tipo *">
-                  <Select
-                    value={form.tipo}
-                    onValueChange={(v) => {
-                      set("tipo", v as "Receita" | "Despesa");
-                      set("tipo_efetivo", v as TipoEfetivo);
-                    }}
-                  >
-                    <SelectTrigger className="text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Receita">Receita</SelectItem>
-                      <SelectItem value="Despesa">Despesa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Tipo efetivo *">
-                  <Select value={form.tipo_efetivo} onValueChange={(v) => set("tipo_efetivo", v as TipoEfetivo)}>
-                    <SelectTrigger className="text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["Receita", "Despesa", "Transferência", "Investimento"].map((o) => (
-                        <SelectItem key={o} value={o}>
-                          {o}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </div>
-            </div>
-          )}
-
-          {/* Passo 4: Conta, Forma e Categoria */}
-          {step === 4 && (
-            <div className="space-y-3 animate-in fade-in slide-in-from-right-1 duration-200">
-              <div className="text-sm font-medium text-muted-foreground">Classifique o lançamento (opcional):</div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Conta">
-                  <Select value={form.account_id} onValueChange={(v) => set("account_id", v)}>
-                    <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(accountsQ.data?.items ?? []).map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Forma de pagamento">
-                  <Select value={form.forma_pagto} onValueChange={(v) => set("forma_pagto", v)}>
-                    <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FORMAS.map((f) => (
-                        <SelectItem key={f} value={f}>
-                          {f}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </div>
-
-              <Field label="Categoria">
+              <div className="text-sm font-medium text-muted-foreground">Selecione a categoria:</div>
+              <Field label="Categoria *">
                 <div className="space-y-1">
                   <Select
                     value={form.category_id}
@@ -370,8 +328,14 @@ export function NewTransactionDialog() {
                   )}
                 </div>
               </Field>
+            </div>
+          )}
 
-              <Field label="Subcategoria">
+          {/* Passo 4: Subcategoria */}
+          {step === 4 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-1 duration-200">
+              <div className="text-sm font-medium text-muted-foreground">Selecione a subcategoria:</div>
+              <Field label="Subcategoria *">
                 <div className="space-y-1">
                   <Select
                     value={form.subcategory_id}
@@ -426,60 +390,80 @@ export function NewTransactionDialog() {
             </div>
           )}
 
-          {/* Passo 5: Status, Realizado e Observações */}
+          {/* Passo 5: Conta */}
           {step === 5 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-1 duration-200">
-              <div className="text-sm font-medium text-muted-foreground">Mais alguns detalhes:</div>
-              <div className="grid grid-cols-2 gap-3 items-center">
-                <Field label="Status">
-                  <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                    <SelectTrigger className="text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Realizado">
-                  <div className="flex items-center h-9 gap-2">
-                    <Switch checked={form.realizado} onCheckedChange={(v) => set("realizado", v)} />
-                    <span className="text-xs text-muted-foreground">
-                      {form.realizado ? "Sim (Efetivado)" : "Não (Previsto)"}
-                    </span>
-                  </div>
-                </Field>
-              </div>
-
-              <Field label="Observações">
-                <Textarea rows={2} value={form.observacoes} onChange={(e) => set("observacoes", e.target.value)} className="text-sm" />
+              <div className="text-sm font-medium text-muted-foreground">Em qual conta será colocado?</div>
+              <Field label="Conta *">
+                <Select value={form.account_id} onValueChange={(v) => set("account_id", v)}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(accountsQ.data?.items ?? []).map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
             </div>
           )}
 
-          {/* Passo 6: Revisão dos Dados antes do lançamento */}
+          {/* Passo 6: Forma de pagamento */}
           {step === 6 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-1 duration-200">
+              <div className="text-sm font-medium text-muted-foreground">Qual a forma de pagamento?</div>
+              <Field label="Forma de pagamento *">
+                <Select value={form.forma_pagto} onValueChange={(v) => set("forma_pagto", v)}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FORMAS.map((f) => (
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+          )}
+
+          {/* Passo 7: Descrição */}
+          {step === 7 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-1 duration-200">
+              <div className="text-sm font-medium text-muted-foreground">Dê uma descrição (opcional):</div>
+              <Field label="Descrição">
+                <Input
+                  value={form.descricao}
+                  onChange={(e) => set("descricao", e.target.value)}
+                  placeholder="Ex: Mercado, Salário..."
+                  autoFocus
+                  className="text-sm"
+                />
+              </Field>
+            </div>
+          )}
+
+          {/* Passo 8: Revisão dos Dados antes do lançamento */}
+          {step === 8 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-1 duration-200">
               <div className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                 <Check className="size-4 text-[color:var(--success)]" />
                 <span>Revise as informações antes de lançar:</span>
               </div>
               <div className="border border-border/60 rounded-lg overflow-hidden bg-muted/40 text-xs divide-y divide-border/40">
+                <ReviewRow label="Tipo" value={form.tipo} />
                 <ReviewRow label="Data" value={form.data.split("-").reverse().join("/")} />
                 <ReviewRow label="Valor" value={`R$ ${form.valor}`} className="font-semibold text-primary" />
-                <ReviewRow label="Descrição" value={form.descricao} />
-                <ReviewRow label="Tipo" value={`${form.tipo} (${form.tipo_efetivo})`} />
-                <ReviewRow label="Conta" value={selectedAccName} />
-                <ReviewRow label="Forma de Pagamento" value={form.forma_pagto || "Nenhuma"} />
                 <ReviewRow label="Categoria" value={selectedCatName} />
                 <ReviewRow label="Subcategoria" value={selectedSubcatName} />
-                <ReviewRow label="Status" value={form.status} />
-                <ReviewRow label="Realizado" value={form.realizado ? "Sim (Efetivado)" : "Não (Previsto)"} />
-                {form.observacoes.trim() && <ReviewRow label="Observações" value={form.observacoes} />}
+                <ReviewRow label="Conta" value={selectedAccName} />
+                <ReviewRow label="Forma de Pagamento" value={form.forma_pagto || "Nenhuma"} />
+                {form.descricao.trim() && <ReviewRow label="Descrição" value={form.descricao} />}
               </div>
             </div>
           )}
@@ -496,7 +480,7 @@ export function NewTransactionDialog() {
             </Button>
           )}
 
-          {step < 6 ? (
+          {step < 8 ? (
             <Button type="button" size="sm" onClick={nextStep} className="gap-1 ml-auto">
               Avançar <ChevronRight className="size-3.5" />
             </Button>

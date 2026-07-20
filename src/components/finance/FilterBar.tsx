@@ -72,38 +72,47 @@ export function FilterBar({
 
   const activeCount =
     filters.categoria.length +
-    filters.conta.length +
     filters.forma_pagto.length +
     filters.tipo_efetivo.length +
     filters.status.length +
     (filters.period !== "all" ? 1 : 0);
+    
+  const totalActiveCount = activeCount + filters.conta.length;
 
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="glass rounded-2xl p-3 sticky top-3 z-20 space-y-2 transition-all">
       {/* compact trigger bar */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 text-xs font-semibold hover:text-primary transition-colors text-foreground select-none"
-        >
-          <SlidersHorizontal className="size-4 opacity-70" />
-          <span>Filtros</span>
-          {activeCount > 0 && (
-            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] rounded-full">
-              {activeCount} ativo{activeCount > 1 ? "s" : ""}
-            </Badge>
-          )}
-          {isOpen ? (
-            <ChevronUp className="size-3.5 opacity-60" />
-          ) : (
-            <ChevronDown className="size-3.5 opacity-60" />
-          )}
-        </button>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-4">
+          <MultiSelect 
+            label="Conta" 
+            options={opts.conta} 
+            value={filters.conta} 
+            onChange={(v) => setMulti("conta", v)} 
+          />
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-2 text-xs font-semibold hover:text-primary transition-colors text-foreground select-none"
+          >
+            <SlidersHorizontal className="size-4 opacity-70" />
+            <span>Filtros avançados</span>
+            {activeCount > 0 && (
+              <Badge variant="secondary" className="px-2 py-0.5 text-[10px] rounded-full">
+                {activeCount} ativo{activeCount > 1 ? "s" : ""}
+              </Badge>
+            )}
+            {isOpen ? (
+              <ChevronUp className="size-3.5 opacity-60" />
+            ) : (
+              <ChevronDown className="size-3.5 opacity-60" />
+            )}
+          </button>
+        </div>
 
-        {activeCount > 0 && (
+        {totalActiveCount > 0 && (
           <Button
             variant="ghost"
             size="sm"
@@ -112,7 +121,7 @@ export function FilterBar({
               onChange({ period: "all", categoria: [], conta: [], forma_pagto: [], tipo_efetivo: [], status: [] })
             }
           >
-            <X className="size-3" /> Limpar ({activeCount})
+            <X className="size-3" /> Limpar ({totalActiveCount})
           </Button>
         )}
       </div>
@@ -192,7 +201,6 @@ export function FilterBar({
           </div>
           <div className="h-5 w-px bg-border mx-1" />
           <MultiSelect label="Categoria" options={opts.categoria} value={filters.categoria} onChange={(v) => setMulti("categoria", v)} />
-          <MultiSelect label="Conta" options={opts.conta} value={filters.conta} onChange={(v) => setMulti("conta", v)} />
           <MultiSelect label="Forma" options={opts.forma_pagto} value={filters.forma_pagto} onChange={(v) => setMulti("forma_pagto", v)} />
           <MultiSelect label="Tipo" options={opts.tipo_efetivo} value={filters.tipo_efetivo} onChange={(v) => setMulti("tipo_efetivo", v)} />
           <MultiSelect label="Status" options={opts.status} value={filters.status} onChange={(v) => setMulti("status", v)} />
